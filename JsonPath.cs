@@ -315,11 +315,6 @@ namespace JsonPath
                     Trace(tail, value, path);
                     Walk(atom, tail, value, path, new WalkCallback(WalkTree));
                 }
-                else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
-                {
-                    foreach (string part in RegExp(@"'?,'?").Split(atom))
-                        Trace(part + ";" + tail, value, path);
-                }
                 else if (atom.Length > 2 && atom[0] == '(' && atom[atom.Length - 1] == ')') // [(exp)]
                 {
                     Trace(eval(atom, value, path.Substring(path.LastIndexOf(';') + 1)) + ";" + tail, value, path);
@@ -331,6 +326,11 @@ namespace JsonPath
                 else if (RegExp(@"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$").IsMatch(atom)) // [start:end:step] Phyton slice syntax
                 {
                     Slice(atom, tail, value, path);
+                }
+                else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
+                {
+                    foreach (string part in RegExp(@"'?,'?").Split(atom))
+                        Trace(part + ";" + tail, value, path);
                 }
             }
 
