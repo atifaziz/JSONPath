@@ -202,7 +202,7 @@ namespace JsonPath
 
         private sealed class NormalizationSwap
         {
-            ArrayList subx = new ArrayList(4);
+            private readonly ArrayList subx = new ArrayList(4);
 
             public string Capture(Match match)
             {
