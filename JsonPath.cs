@@ -164,8 +164,8 @@ namespace JsonPath
 
             expr = Normalize(expr);
 
-            if (expr.Length >= 2 && expr[0] == '$' && expr[1] == ';')
-                expr = expr.Substring(2);
+            if (expr.Length >= 1 && expr[0] == '$') // ^\$:?
+                expr = expr.Substring(expr.Length >= 2 && expr[1] == ';' ? 2 : 1);
 
             i.Trace(expr, obj, "$");
         }
