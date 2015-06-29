@@ -116,8 +116,8 @@ namespace JsonPath
 
         public IList SelectNodesTo(object obj, string expr, IList output)
         {
-            var accumulator = new ListAccumulator(output ?? new ArrayList());
-            SelectTo(obj, expr, accumulator.Put);
+            var list = output ?? new ArrayList();
+            SelectTo(obj, expr, (value, indicies) => list.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
             return output;
         }
 
@@ -407,23 +407,6 @@ namespace JsonPath
                     throw new ArgumentNullException("value");
 
                 return Type.GetTypeCode(value.GetType()) != TypeCode.Object;
-            }
-        }
-
-        sealed class ListAccumulator
-        {
-            readonly IList list;
-
-            public ListAccumulator(IList list)
-            {
-                Debug.Assert(list != null);
-
-                this.list = list;
-            }
-
-            public void Put(object value, string[] indicies)
-            {
-                list.Add(new JsonPathNode(value, AsBracketNotation(indicies)));
             }
         }
     }
