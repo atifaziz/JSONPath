@@ -70,45 +70,29 @@ namespace JsonPath
     [Serializable]
     public sealed class JsonPathNode
     {
-        private readonly object value;
-        private readonly string path;
-
         public JsonPathNode(object value, string path)
         {
-            if (path == null)
-                throw new ArgumentNullException("path");
+            if (path == null) throw new ArgumentNullException("path");
+            if (path.Length == 0) throw new ArgumentException("path");
 
-            if (path.Length == 0)
-                throw new ArgumentException("path");
-
-            this.value = value;
-            this.path = path;
+            Value = value;
+            Path = path;
         }
 
-        public object Value
-        {
-            get { return value; }
-        }
+        public object Value { get; private set; }
+        public string Path { get; private set; }
 
-        public string Path
-        {
-            get { return path; }
-        }
-
-        public override string ToString()
-        {
-            return Path + " = " + Value;
-        }
+        public override string ToString() { return Path + " = " + Value; }
 
         public static object[] ValuesFrom(ICollection nodes)
         {
-            object[] values = new object[nodes != null ? nodes.Count : 0];
+            var values = new object[nodes != null ? nodes.Count : 0];
 
             if (values.Length > 0)
             {
                 Debug.Assert(nodes != null);
 
-                int i = 0;
+                var i = 0;
                 foreach (JsonPathNode node in nodes)
                     values[i++] = node.Value;
             }
@@ -118,13 +102,13 @@ namespace JsonPath
 
         public static string[] PathsFrom(ICollection nodes)
         {
-            string[] paths = new string[nodes != null ? nodes.Count : 0];
+            var paths = new string[nodes != null ? nodes.Count : 0];
 
             if (paths.Length > 0)
             {
                 Debug.Assert(nodes != null);
 
-                int i = 0;
+                var i = 0;
                 foreach (JsonPathNode node in nodes)
                     paths[i++] = node.Path;
             }
@@ -137,30 +121,15 @@ namespace JsonPath
     {
         public static readonly JsonPathContext Default = new JsonPathContext();
 
-        private JsonPathScriptEvaluator eval;
-        private IJsonPathValueSystem system;
-
-        public JsonPathScriptEvaluator ScriptEvaluator
-        {
-            get { return eval; }
-            set { eval = value; }
-        }
-
-        public IJsonPathValueSystem ValueSystem
-        {
-            get { return system; }
-            set { system = value; }
-        }
+        public JsonPathScriptEvaluator ScriptEvaluator { get; set; }
+        public IJsonPathValueSystem ValueSystem { get; set; }
 
         public void SelectTo(object obj, string expr, JsonPathResultAccumulator output)
         {
-            if (obj == null)
-                throw new ArgumentNullException("obj");
+            if (obj == null) throw new ArgumentNullException("obj");
+            if (output == null) throw new ArgumentNullException("output");
 
-            if (output == null)
-                throw new ArgumentNullException("output");
-
-            Interpreter i = new Interpreter(output, ValueSystem, ScriptEvaluator);
+            var i = new Interpreter(output, ValueSystem, ScriptEvaluator);
 
             expr = Normalize(expr);
 
@@ -172,43 +141,43 @@ namespace JsonPath
 
         public JsonPathNode[] SelectNodes(object obj, string expr)
         {
-            ArrayList list = new ArrayList();
+            var list = new ArrayList();
             SelectNodesTo(obj, expr, list);
             return (JsonPathNode[]) list.ToArray(typeof(JsonPathNode));
         }
 
         public IList SelectNodesTo(object obj, string expr, IList output)
         {
-            ListAccumulator accumulator = new ListAccumulator(output != null ? output : new ArrayList());
-            SelectTo(obj, expr, new JsonPathResultAccumulator(accumulator.Put));
+            var accumulator = new ListAccumulator(output ?? new ArrayList());
+            SelectTo(obj, expr, accumulator.Put);
             return output;
         }
 
-        private static Regex RegExp(string pattern)
+        static Regex RegExp(string pattern)
         {
             return new Regex(pattern, RegexOptions.ECMAScript);
         }
 
-        private static string Normalize(string expr)
+        static string Normalize(string expr)
         {
-            NormalizationSwap swap = new NormalizationSwap();
-            expr = RegExp(@"[\['](\??\(.*?\))[\]']").Replace(expr, new MatchEvaluator(swap.Capture));
+            var swap = new NormalizationSwap();
+            expr = RegExp(@"[\['](\??\(.*?\))[\]']").Replace(expr, swap.Capture);
             expr = RegExp(@"'?\.'?|\['?").Replace(expr, ";");
             expr = RegExp(@";;;|;;").Replace(expr, ";..;");
             expr = RegExp(@";$|'?\]|'$").Replace(expr, string.Empty);
-            expr = RegExp(@"#([0-9]+)").Replace(expr, new MatchEvaluator(swap.Yield));
+            expr = RegExp(@"#([0-9]+)").Replace(expr, swap.Yield);
             return expr;
         }
 
-        private sealed class NormalizationSwap
+        sealed class NormalizationSwap
         {
-            private readonly ArrayList subx = new ArrayList(4);
+            readonly ArrayList subx = new ArrayList(4);
 
             public string Capture(Match match)
             {
                 Debug.Assert(match != null);
 
-                int index = subx.Add(match.Groups[1].Value);
+                var index = subx.Add(match.Groups[1].Value);
                 return "[#" + index.ToString(CultureInfo.InvariantCulture) + "]";
             }
 
@@ -216,7 +185,7 @@ namespace JsonPath
             {
                 Debug.Assert(match != null);
 
-                int index = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+                var index = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                 return (string) subx[index];
             }
         }
@@ -226,9 +195,9 @@ namespace JsonPath
             if (indicies == null)
                 throw new ArgumentNullException("indicies");
 
-            StringBuilder sb = new StringBuilder();
- 
-            foreach (string index in indicies)
+            var sb = new StringBuilder();
+
+            foreach (var index in indicies)
             {
                 if (sb.Length == 0)
                 {
@@ -244,16 +213,11 @@ namespace JsonPath
                     sb.Append(']');
                 }
             }
-            
+
             return sb.ToString();
         }
 
-        private static int ParseInt(string s)
-        {
-            return ParseInt(s, 0);
-        }
-
-        private static int ParseInt(string str, int defaultValue)
+        static int ParseInt(string str, int defaultValue = 0)
         {
             if (str == null || str.Length == 0)
                 return defaultValue;
@@ -268,26 +232,26 @@ namespace JsonPath
             }
         }
 
-        private sealed class Interpreter
+        sealed class Interpreter
         {
-            private readonly JsonPathResultAccumulator output;
-            private readonly JsonPathScriptEvaluator eval;
-            private readonly IJsonPathValueSystem system;
+            readonly JsonPathResultAccumulator output;
+            readonly JsonPathScriptEvaluator eval;
+            readonly IJsonPathValueSystem system;
 
-            private static readonly IJsonPathValueSystem defaultValueSystem = new BasicValueSystem();
+            static readonly IJsonPathValueSystem defaultValueSystem = new BasicValueSystem();
 
-            private static readonly char[] colon = new char[] { ':' };
-            private static readonly char[] semicolon = new char[] { ';' };
+            static readonly char[] colon = { ':' };
+            static readonly char[] semicolon = { ';' };
 
-            private delegate void WalkCallback(object member, string loc, string expr, object value, string path);
+            delegate void WalkCallback(object member, string loc, string expr, object value, string path);
 
             public Interpreter(JsonPathResultAccumulator output, IJsonPathValueSystem valueSystem, JsonPathScriptEvaluator eval)
             {
                 Debug.Assert(output != null);
 
                 this.output = output;
-                this.eval = eval != null ? eval : new JsonPathScriptEvaluator(NullEval);
-                this.system = valueSystem != null ? valueSystem : defaultValueSystem;
+                this.eval = eval ?? NullEval;
+                system = valueSystem ?? defaultValueSystem;
             }
 
             public void Trace(string expr, object value, string path)
@@ -298,9 +262,9 @@ namespace JsonPath
                     return;
                 }
 
-                int i = expr.IndexOf(';');
-                string atom = i >= 0 ? expr.Substring(0, i) : expr;
-                string tail = i >= 0 ? expr.Substring(i + 1) : string.Empty;
+                var i = expr.IndexOf(';');
+                var atom = i >= 0 ? expr.Substring(0, i) : expr;
+                var tail = i >= 0 ? expr.Substring(i + 1) : string.Empty;
 
                 if (value != null && system.HasMember(value, atom))
                 {
@@ -308,12 +272,12 @@ namespace JsonPath
                 }
                 else if (atom == "*")
                 {
-                    Walk(atom, tail, value, path, new WalkCallback(WalkWild));
+                    Walk(atom, tail, value, path, WalkWild);
                 }
                 else if (atom == "..")
                 {
                     Trace(tail, value, path);
-                    Walk(atom, tail, value, path, new WalkCallback(WalkTree));
+                    Walk(atom, tail, value, path, WalkTree);
                 }
                 else if (atom.Length > 2 && atom[0] == '(' && atom[atom.Length - 1] == ')') // [(exp)]
                 {
@@ -321,7 +285,7 @@ namespace JsonPath
                 }
                 else if (atom.Length > 3 && atom[0] == '?' && atom[1] == '(' && atom[atom.Length - 1] == ')') // [?(exp)]
                 {
-                    Walk(atom, tail, value, path, new WalkCallback(WalkFiltered));
+                    Walk(atom, tail, value, path, WalkFiltered);
                 }
                 else if (RegExp(@"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$").IsMatch(atom)) // [start:end:step] Phyton slice syntax
                 {
@@ -329,26 +293,26 @@ namespace JsonPath
                 }
                 else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
                 {
-                    foreach (string part in RegExp(@"'?,'?").Split(atom))
+                    foreach (var part in RegExp(@"'?,'?").Split(atom))
                         Trace(part + ";" + tail, value, path);
                 }
             }
 
-            private void Store(string path, object value)
+            void Store(string path, object value)
             {
                 if (path != null)
                     output(value, path.Split(semicolon));
             }
 
-            private void Walk(string loc, string expr, object value, string path, WalkCallback callback)
+            void Walk(string loc, string expr, object value, string path, WalkCallback callback)
             {
                 if (system.IsPrimitive(value))
                     return;
 
                 if (system.IsArray(value))
                 {
-                    IList list = (IList) value;
-                    for (int i = 0; i < list.Count; i++)
+                    var list = (IList) value;
+                    for (var i = 0; i < list.Count; i++)
                         callback(i, loc, expr, value, path);
                 }
                 else if (system.IsObject(value))
@@ -358,55 +322,55 @@ namespace JsonPath
                 }
             }
 
-            private void WalkWild(object member, string loc, string expr, object value, string path)
+            void WalkWild(object member, string loc, string expr, object value, string path)
             {
                 Trace(member + ";" + expr, value, path);
             }
 
-            private void WalkTree(object member, string loc, string expr, object value, string path)
+            void WalkTree(object member, string loc, string expr, object value, string path)
             {
-                object result = Index(value, member.ToString());
+                var result = Index(value, member.ToString());
                 if (result != null && !system.IsPrimitive(result))
                     Trace("..;" + expr, result, path + ";" + member);
             }
 
-            private void WalkFiltered(object member, string loc, string expr, object value, string path)
+            void WalkFiltered(object member, string loc, string expr, object value, string path)
             {
-                object result = eval(RegExp(@"^\?\((.*?)\)$").Replace(loc, "$1"),
+                var result = eval(RegExp(@"^\?\((.*?)\)$").Replace(loc, "$1"),
                     Index(value, member.ToString()), member.ToString());
 
                 if (Convert.ToBoolean(result, CultureInfo.InvariantCulture))
                     Trace(member + ";" + expr, value, path);
             }
 
-            private void Slice(string loc, string expr, object value, string path)
+            void Slice(string loc, string expr, object value, string path)
             {
-                IList list = value as IList;
+                var list = value as IList;
 
                 if (list == null)
                     return;
 
-                int length = list.Count;
-                string[] parts = loc.Split(colon);
-                int start = ParseInt(parts[0]);
-                int end = ParseInt(parts[1], list.Count);
-                int step = parts.Length > 2 ? ParseInt(parts[2], 1) : 1;
+                var length = list.Count;
+                var parts = loc.Split(colon);
+                var start = ParseInt(parts[0]);
+                var end = ParseInt(parts[1], list.Count);
+                var step = parts.Length > 2 ? ParseInt(parts[2], 1) : 1;
                 start = (start < 0) ? Math.Max(0, start + length) : Math.Min(length, start);
                 end = (end < 0) ? Math.Max(0, end + length) : Math.Min(length, end);
-                for (int i = start; i < end; i += step)
+                for (var i = start; i < end; i += step)
                     Trace(i + ";" + expr, value, path);
             }
 
-            private object Index(object obj, string member)
+            object Index(object obj, string member)
             {
                 return system.GetMemberValue(obj, member);
             }
 
-            private static object NullEval(string expr, object value, string context)
+            static object NullEval(string expr, object value, string context)
             {
                 //
                 // @ symbol in expr must be interpreted specially to resolve
-                // to value. In JavaScript, the implementation would look 
+                // to value. In JavaScript, the implementation would look
                 // like:
                 //
                 // return obj && value && eval(expr.replace(/@/g, "value"));
@@ -416,24 +380,24 @@ namespace JsonPath
             }
         }
 
-        private sealed class BasicValueSystem : IJsonPathValueSystem
+        sealed class BasicValueSystem : IJsonPathValueSystem
         {
             public bool HasMember(object value, string member)
             {
                 if (IsPrimitive(value))
                     return false;
 
-                IDictionary dict = value as IDictionary;
+                var dict = value as IDictionary;
                 if (dict != null)
                     return dict.Contains(member);
 
-                IList list = value as IList;
+                var list = value as IList;
                 if (list != null)
                 {
-                    int index = ParseInt(member, -1);
+                    var index = ParseInt(member, -1);
                     return index >= 0 && index < list.Count;
                 }
-                
+
                 return false;
             }
 
@@ -442,12 +406,12 @@ namespace JsonPath
                 if (IsPrimitive(value))
                     throw new ArgumentException("value");
 
-                IDictionary dict = value as IDictionary;
+                var dict = value as IDictionary;
                 if (dict != null)
                     return dict[member];
 
-                IList list = (IList) value;
-                int index = ParseInt(member, -1);
+                var list = (IList) value;
+                var index = ParseInt(member, -1);
                 if (index >= 0 && index < list.Count)
                     return list[index];
 
@@ -478,9 +442,9 @@ namespace JsonPath
             }
         }
 
-        private sealed class ListAccumulator
+        sealed class ListAccumulator
         {
-            private readonly IList list;
+            readonly IList list;
 
             public ListAccumulator(IList list)
             {
@@ -491,7 +455,7 @@ namespace JsonPath
 
             public void Put(object value, string[] indicies)
             {
-                list.Add(new JsonPathNode(value, JsonPathContext.AsBracketNotation(indicies)));
+                list.Add(new JsonPathNode(value, AsBracketNotation(indicies)));
             }
         }
     }
