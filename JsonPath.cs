@@ -47,8 +47,10 @@ namespace JsonPath
 
     using System;
     using System.Collections;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Globalization;
+    using System.Linq;
     using System.Text;
     using System.Text.RegularExpressions;
 
@@ -61,7 +63,7 @@ namespace JsonPath
     {
         bool HasMember(object value, string member);
         object GetMemberValue(object value, string member);
-        IEnumerable GetMembers(object value);
+        IEnumerable<string> GetMembers(object value);
         bool IsObject(object value);
         bool IsArray(object value);
         bool IsPrimitive(object value);
@@ -285,7 +287,7 @@ namespace JsonPath
                 }
                 else if (system.IsObject(value))
                 {
-                    foreach (string key in system.GetMembers(value))
+                    foreach (var key in system.GetMembers(value))
                         callback(key, loc, expr, value, path);
                 }
             }
@@ -386,9 +388,9 @@ namespace JsonPath
                 return null;
             }
 
-            public IEnumerable GetMembers(object value)
+            public IEnumerable<string> GetMembers(object value)
             {
-                return ((IDictionary) value).Keys;
+                return ((IDictionary) value).Keys.Cast<string>();
             }
 
             public bool IsObject(object value)
