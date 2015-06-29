@@ -118,9 +118,9 @@ namespace JsonPath
 
         public IList SelectNodesTo(object obj, string expr, IList output)
         {
-            var list = output ?? new ArrayList();
-            SelectTo(obj, expr, (value, indicies) => list.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
-            return output;
+            var nodes = output ?? new ArrayList();
+            SelectTo(obj, expr, (value, indicies) => nodes.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
+            return nodes;
         }
 
         static Regex RegExp(string pattern)
