@@ -83,38 +83,6 @@ namespace JsonPath
         public string Path { get; private set; }
 
         public override string ToString() { return Path + " = " + Value; }
-
-        public static object[] ValuesFrom(ICollection nodes)
-        {
-            var values = new object[nodes != null ? nodes.Count : 0];
-
-            if (values.Length > 0)
-            {
-                Debug.Assert(nodes != null);
-
-                var i = 0;
-                foreach (JsonPathNode node in nodes)
-                    values[i++] = node.Value;
-            }
-
-            return values;
-        }
-
-        public static string[] PathsFrom(ICollection nodes)
-        {
-            var paths = new string[nodes != null ? nodes.Count : 0];
-
-            if (paths.Length > 0)
-            {
-                Debug.Assert(nodes != null);
-
-                var i = 0;
-                foreach (JsonPathNode node in nodes)
-                    paths[i++] = node.Path;
-            }
-
-            return paths;
-        }
     }
 
     public sealed class JsonPathContext
