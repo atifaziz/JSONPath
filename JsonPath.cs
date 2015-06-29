@@ -130,34 +130,21 @@ namespace JsonPath
 
         static string Normalize(string expr)
         {
-            var swap = new NormalizationSwap();
-            expr = RegExp(@"[\['](\??\(.*?\))[\]']").Replace(expr, swap.Capture);
+            var subx = new List<string>();
+            expr = RegExp(@"[\['](\??\(.*?\))[\]']").Replace(expr, m =>
+            {
+                subx.Add(m.Groups[1].Value);
+                return "[#" + subx.Count.ToString(CultureInfo.InvariantCulture) + "]";
+            });
             expr = RegExp(@"'?\.'?|\['?").Replace(expr, ";");
             expr = RegExp(@";;;|;;").Replace(expr, ";..;");
             expr = RegExp(@";$|'?\]|'$").Replace(expr, string.Empty);
-            expr = RegExp(@"#([0-9]+)").Replace(expr, swap.Yield);
+            expr = RegExp(@"#([0-9]+)").Replace(expr, m =>
+            {
+                var index = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+                return subx[index];
+            });
             return expr;
-        }
-
-        sealed class NormalizationSwap
-        {
-            readonly ArrayList subx = new ArrayList(4);
-
-            public string Capture(Match match)
-            {
-                Debug.Assert(match != null);
-
-                var index = subx.Add(match.Groups[1].Value);
-                return "[#" + index.ToString(CultureInfo.InvariantCulture) + "]";
-            }
-
-            public string Yield(Match match)
-            {
-                Debug.Assert(match != null);
-
-                var index = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
-                return (string) subx[index];
-            }
         }
 
         public static string AsBracketNotation(string[] indicies)
