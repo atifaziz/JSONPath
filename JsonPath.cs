@@ -187,7 +187,7 @@ namespace JsonPath
 
         static int ParseInt(string str, int defaultValue = 0)
         {
-            if (str == null || str.Length == 0)
+            if (string.IsNullOrEmpty(str))
                 return defaultValue;
 
             try
@@ -224,7 +224,7 @@ namespace JsonPath
 
             public void Trace(string expr, object value, string path)
             {
-                if (expr == null || expr.Length == 0)
+                if (string.IsNullOrEmpty(expr))
                 {
                     Store(path, value);
                     return;
