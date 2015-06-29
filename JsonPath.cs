@@ -109,18 +109,16 @@ namespace JsonPath
             i.Trace(expr, obj, "$");
         }
 
-        public JsonPathNode[] SelectNodes(object obj, string expr)
+        public IEnumerable<JsonPathNode> SelectNodes(object obj, string expr)
         {
-            var list = new ArrayList();
-            SelectNodesTo(obj, expr, list);
-            return (JsonPathNode[]) list.ToArray(typeof(JsonPathNode));
+            return SelectNodesTo(obj, expr, new List<JsonPathNode>()).AsEnumerable();
         }
 
-        public IList SelectNodesTo(object obj, string expr, IList output)
+        public T SelectNodesTo<T>(object obj, string expr, T output)
+            where T : ICollection<JsonPathNode>
         {
-            var nodes = output ?? new ArrayList();
-            SelectTo(obj, expr, (value, indicies) => nodes.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
-            return nodes;
+            SelectTo(obj, expr, (value, indicies) => output.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
+            return output;
         }
 
         static Regex RegExp(string pattern)
