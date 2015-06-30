@@ -48,7 +48,6 @@ namespace JsonPath
     using System;
     using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Globalization;
     using System.Linq;
     using System.Text;
@@ -78,31 +77,18 @@ namespace JsonPath
 
         public IJsonPathValueSystem ValueSystem { get; set; }
 
-        public void SelectTo(object obj, string expr, Action<object, string[]> output)
+        public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultor)
         {
             if (obj == null) throw new ArgumentNullException("obj");
-            if (output == null) throw new ArgumentNullException("output");
 
-            var i = new Interpreter(output, ValueSystem, ScriptEvaluator);
+            var i = new Interpreter(ValueSystem, ScriptEvaluator);
 
             expr = Normalize(expr);
 
             if (expr.Length >= 1 && expr[0] == '$') // ^\$:?
                 expr = expr.Substring(expr.Length >= 2 && expr[1] == ';' ? 2 : 1);
 
-            i.Trace(expr, obj, "$");
-        }
-
-        public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultSelector)
-        {
-            return SelectNodesTo(obj, expr, new List<T>(), resultSelector).AsEnumerable();
-        }
-
-        public TCollection SelectNodesTo<TNode, TCollection>(object obj, string expr, TCollection output, Func<object, string, TNode> resultor)
-            where TCollection : ICollection<TNode>
-        {
-            SelectTo(obj, expr, (value, indicies) => output.Add(resultor(value, AsBracketNotation(indicies))));
-            return output;
+            return i.Trace(expr, obj, "$", (value, path) => resultor(value, AsBracketNotation(path)));
         }
 
         static Regex RegExp(string pattern)
@@ -173,7 +159,6 @@ namespace JsonPath
 
         sealed class Interpreter
         {
-            readonly Action<object, string[]> _output;
             readonly Func<string, object, string, object> _eval;
             readonly IJsonPathValueSystem _system;
 
@@ -184,11 +169,8 @@ namespace JsonPath
 
             delegate void WalkCallback(object member, string loc, string expr, object value, string path);
 
-            public Interpreter(Action<object, string[]> output, IJsonPathValueSystem valueSystem, Func<string, object, string, object> eval)
+            public Interpreter(IJsonPathValueSystem valueSystem, Func<string, object, string, object> eval)
             {
-                Debug.Assert(output != null);
-
-                _output = output;
                 _eval = eval ?? delegate
                 {
                     // @ symbol in expr must be interpreted specially to resolve
@@ -202,54 +184,97 @@ namespace JsonPath
                 _system = valueSystem ?? DefaultValueSystem;
             }
 
-            public void Trace(string expr, object value, string path)
+            sealed class TraceArgs
             {
-                if (string.IsNullOrEmpty(expr))
-                {
-                    Store(path, value);
-                    return;
-                }
+                public readonly string Expr;
+                public readonly object Value;
+                public readonly string Path;
 
-                var i = expr.IndexOf(';');
-                var atom = i >= 0 ? expr.Substring(0, i) : expr;
-                var tail = i >= 0 ? expr.Substring(i + 1) : string.Empty;
-
-                if (value != null && _system.HasMember(value, atom))
+                public TraceArgs(string expr, object value, string path)
                 {
-                    Trace(tail, Index(value, atom), path + ";" + atom);
-                }
-                else if (atom == "*")
-                {
-                    Walk(atom, tail, value, path, WalkWild);
-                }
-                else if (atom == "..")
-                {
-                    Trace(tail, value, path);
-                    Walk(atom, tail, value, path, WalkTree);
-                }
-                else if (atom.Length > 2 && atom[0] == '(' && atom[atom.Length - 1] == ')') // [(exp)]
-                {
-                    Trace(_eval(atom, value, path.Substring(path.LastIndexOf(';') + 1)) + ";" + tail, value, path);
-                }
-                else if (atom.Length > 3 && atom[0] == '?' && atom[1] == '(' && atom[atom.Length - 1] == ')') // [?(exp)]
-                {
-                    Walk(atom, tail, value, path, WalkFiltered);
-                }
-                else if (RegExp(@"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$").IsMatch(atom)) // [start:end:step] Phyton slice syntax
-                {
-                    Slice(atom, tail, value, path);
-                }
-                else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
-                {
-                    foreach (var part in RegExp(@"'?,'?").Split(atom))
-                        Trace(part + ";" + tail, value, path);
+                    Expr  = expr;
+                    Value = value;
+                    Path  = path;
                 }
             }
 
-            void Store(string path, object value)
+            public IEnumerable<T> Trace<T>(string expr, object value, string path, Func<object, string[], T> resultor)
             {
-                if (path != null)
-                    _output(value, path.Split(Semicolon));
+                return Trace(Args(expr, value, path), resultor);
+            }
+
+            static TraceArgs Args(string expr, object value, string path)
+            {
+                return new TraceArgs(expr, value, path);
+            }
+
+            IEnumerable<T> Trace<T>(TraceArgs args, Func<object, string[], T> resultor)
+            {
+                var stack = new Stack<TraceArgs>();
+                stack.Push(args);
+
+                while (stack.Count > 0)
+                {
+                    var popped = stack.Pop();
+                    var expr  = popped.Expr;
+                    var value = popped.Value;
+                    var path  = popped.Path;
+
+                    if (string.IsNullOrEmpty(expr))
+                    {
+                        if (path != null)
+                            yield return resultor(value, path.Split(Semicolon));
+                        continue;
+                    }
+
+                    var i = expr.IndexOf(';');
+                    var atom = i >= 0 ? expr.Substring(0, i) : expr;
+                    var tail = i >= 0 ? expr.Substring(i + 1) : string.Empty;
+
+                    if (value != null && _system.HasMember(value, atom))
+                    {
+                        stack.Push(Args(tail, Index(value, atom), path + ";" + atom));
+                    }
+                    else if (atom == "*")
+                    {
+                        Walk(atom, tail, value, path, (m, l, x, v, p) => stack.Push(Args(m + ";" + x, v, p)));
+                    }
+                    else if (atom == "..")
+                    {
+                        Walk(atom, tail, value, path, (m, l, x, v, p) =>
+                        {
+                            var result = Index(v, m.ToString());
+                            if (result != null && !_system.IsPrimitive(result))
+                                stack.Push(Args("..;" + x, result, p + ";" + m));
+                        });
+                        stack.Push(Args(tail, value, path));
+                    }
+                    else if (atom.Length > 2 && atom[0] == '(' && atom[atom.Length - 1] == ')') // [(exp)]
+                    {
+                        stack.Push(Args(_eval(atom, value, path.Substring(path.LastIndexOf(';') + 1)) + ";" + tail, value, path));
+                    }
+                    else if (atom.Length > 3 && atom[0] == '?' && atom[1] == '(' && atom[atom.Length - 1] == ')') // [?(exp)]
+                    {
+                        Walk(atom, tail, value, path, (m, l, x, v, p) =>
+                        {
+                            var result = _eval(RegExp(@"^\?\((.*?)\)$").Replace(l, "$1"),
+                                Index(v, m.ToString()), m.ToString());
+
+                            if (Convert.ToBoolean(result, CultureInfo.InvariantCulture))
+                                stack.Push(Args(m + ";" + x, v, p));
+                        });
+                    }
+                    else if (RegExp(@"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$").IsMatch(atom)) // [start:end:step] Phyton slice syntax
+                    {
+                        foreach (var a in Slice(atom, tail, value, path).Reverse())
+                            stack.Push(a);
+                    }
+                    else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
+                    {
+                        foreach (var part in RegExp(@"'?,'?").Split(atom).Reverse())
+                            stack.Push(Args(part + ";" + tail, value, path));
+                    }
+                }
             }
 
             void Walk(string loc, string expr, object value, string path, WalkCallback callback)
@@ -260,43 +285,22 @@ namespace JsonPath
                 if (_system.IsArray(value))
                 {
                     var list = (IList) value;
-                    for (var i = 0; i < list.Count; i++)
+                    for (var i = list.Count - 1; i >= 0; i--)
                         callback(i, loc, expr, value, path);
                 }
                 else if (_system.IsObject(value))
                 {
-                    foreach (var key in _system.GetMembers(value))
+                    foreach (var key in _system.GetMembers(value).Reverse())
                         callback(key, loc, expr, value, path);
                 }
             }
 
-            void WalkWild(object member, string loc, string expr, object value, string path)
-            {
-                Trace(member + ";" + expr, value, path);
-            }
-
-            void WalkTree(object member, string loc, string expr, object value, string path)
-            {
-                var result = Index(value, member.ToString());
-                if (result != null && !_system.IsPrimitive(result))
-                    Trace("..;" + expr, result, path + ";" + member);
-            }
-
-            void WalkFiltered(object member, string loc, string expr, object value, string path)
-            {
-                var result = _eval(RegExp(@"^\?\((.*?)\)$").Replace(loc, "$1"),
-                    Index(value, member.ToString()), member.ToString());
-
-                if (Convert.ToBoolean(result, CultureInfo.InvariantCulture))
-                    Trace(member + ";" + expr, value, path);
-            }
-
-            void Slice(string loc, string expr, object value, string path)
+            static IEnumerable<TraceArgs> Slice(string loc, string expr, object value, string path)
             {
                 var list = value as IList;
 
                 if (list == null)
-                    return;
+                    yield break;
 
                 var length = list.Count;
                 var parts = loc.Split(Colon);
@@ -306,7 +310,7 @@ namespace JsonPath
                 start = (start < 0) ? Math.Max(0, start + length) : Math.Min(length, start);
                 end = (end < 0) ? Math.Max(0, end + length) : Math.Min(length, end);
                 for (var i = start; i < end; i += step)
-                    Trace(i + ";" + expr, value, path);
+                    yield return Args(i + ";" + expr, value, path);
             }
 
             object Index(object obj, string member)
