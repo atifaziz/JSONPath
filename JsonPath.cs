@@ -66,24 +66,6 @@ namespace JsonPath
         bool IsPrimitive(object value);
     }
 
-    [Serializable]
-    public sealed class JsonPathNode
-    {
-        public JsonPathNode(object value, string path)
-        {
-            if (path == null) throw new ArgumentNullException("path");
-            if (path.Length == 0) throw new ArgumentException("path");
-
-            Value = value;
-            Path = path;
-        }
-
-        public object Value { get; private set; }
-        public string Path { get; private set; }
-
-        public override string ToString() { return Path + " = " + Value; }
-    }
-
     public sealed class JsonPathContext
     {
         public static readonly JsonPathContext Default = new JsonPathContext();
@@ -111,15 +93,15 @@ namespace JsonPath
             i.Trace(expr, obj, "$");
         }
 
-        public IEnumerable<JsonPathNode> SelectNodes(object obj, string expr)
+        public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultSelector)
         {
-            return SelectNodesTo(obj, expr, new List<JsonPathNode>()).AsEnumerable();
+            return SelectNodesTo(obj, expr, new List<T>(), resultSelector).AsEnumerable();
         }
 
-        public T SelectNodesTo<T>(object obj, string expr, T output)
-            where T : ICollection<JsonPathNode>
+        public TCollection SelectNodesTo<TNode, TCollection>(object obj, string expr, TCollection output, Func<object, string, TNode> resultor)
+            where TCollection : ICollection<TNode>
         {
-            SelectTo(obj, expr, (value, indicies) => output.Add(new JsonPathNode(value, AsBracketNotation(indicies))));
+            SelectTo(obj, expr, (value, indicies) => output.Add(resultor(value, AsBracketNotation(indicies))));
             return output;
         }
 
