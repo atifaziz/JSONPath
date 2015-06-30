@@ -189,14 +189,14 @@ namespace JsonPath
 
         sealed class Interpreter
         {
-            readonly JsonPathResultAccumulator output;
-            readonly JsonPathScriptEvaluator eval;
-            readonly IJsonPathValueSystem system;
+            readonly JsonPathResultAccumulator _output;
+            readonly JsonPathScriptEvaluator _eval;
+            readonly IJsonPathValueSystem _system;
 
-            static readonly IJsonPathValueSystem defaultValueSystem = new BasicValueSystem();
+            static readonly IJsonPathValueSystem DefaultValueSystem = new BasicValueSystem();
 
-            static readonly char[] colon = { ':' };
-            static readonly char[] semicolon = { ';' };
+            static readonly char[] Colon = { ':' };
+            static readonly char[] Semicolon = { ';' };
 
             delegate void WalkCallback(object member, string loc, string expr, object value, string path);
 
@@ -204,9 +204,9 @@ namespace JsonPath
             {
                 Debug.Assert(output != null);
 
-                this.output = output;
-                this.eval = eval ?? NullEval;
-                system = valueSystem ?? defaultValueSystem;
+                _output = output;
+                _eval = eval ?? NullEval;
+                _system = valueSystem ?? DefaultValueSystem;
             }
 
             public void Trace(string expr, object value, string path)
@@ -221,7 +221,7 @@ namespace JsonPath
                 var atom = i >= 0 ? expr.Substring(0, i) : expr;
                 var tail = i >= 0 ? expr.Substring(i + 1) : string.Empty;
 
-                if (value != null && system.HasMember(value, atom))
+                if (value != null && _system.HasMember(value, atom))
                 {
                     Trace(tail, Index(value, atom), path + ";" + atom);
                 }
@@ -236,7 +236,7 @@ namespace JsonPath
                 }
                 else if (atom.Length > 2 && atom[0] == '(' && atom[atom.Length - 1] == ')') // [(exp)]
                 {
-                    Trace(eval(atom, value, path.Substring(path.LastIndexOf(';') + 1)) + ";" + tail, value, path);
+                    Trace(_eval(atom, value, path.Substring(path.LastIndexOf(';') + 1)) + ";" + tail, value, path);
                 }
                 else if (atom.Length > 3 && atom[0] == '?' && atom[1] == '(' && atom[atom.Length - 1] == ')') // [?(exp)]
                 {
@@ -256,23 +256,23 @@ namespace JsonPath
             void Store(string path, object value)
             {
                 if (path != null)
-                    output(value, path.Split(semicolon));
+                    _output(value, path.Split(Semicolon));
             }
 
             void Walk(string loc, string expr, object value, string path, WalkCallback callback)
             {
-                if (system.IsPrimitive(value))
+                if (_system.IsPrimitive(value))
                     return;
 
-                if (system.IsArray(value))
+                if (_system.IsArray(value))
                 {
                     var list = (IList) value;
                     for (var i = 0; i < list.Count; i++)
                         callback(i, loc, expr, value, path);
                 }
-                else if (system.IsObject(value))
+                else if (_system.IsObject(value))
                 {
-                    foreach (var key in system.GetMembers(value))
+                    foreach (var key in _system.GetMembers(value))
                         callback(key, loc, expr, value, path);
                 }
             }
@@ -285,13 +285,13 @@ namespace JsonPath
             void WalkTree(object member, string loc, string expr, object value, string path)
             {
                 var result = Index(value, member.ToString());
-                if (result != null && !system.IsPrimitive(result))
+                if (result != null && !_system.IsPrimitive(result))
                     Trace("..;" + expr, result, path + ";" + member);
             }
 
             void WalkFiltered(object member, string loc, string expr, object value, string path)
             {
-                var result = eval(RegExp(@"^\?\((.*?)\)$").Replace(loc, "$1"),
+                var result = _eval(RegExp(@"^\?\((.*?)\)$").Replace(loc, "$1"),
                     Index(value, member.ToString()), member.ToString());
 
                 if (Convert.ToBoolean(result, CultureInfo.InvariantCulture))
@@ -306,7 +306,7 @@ namespace JsonPath
                     return;
 
                 var length = list.Count;
-                var parts = loc.Split(colon);
+                var parts = loc.Split(Colon);
                 var start = ParseInt(parts[0]);
                 var end = ParseInt(parts[1], list.Count);
                 var step = parts.Length > 2 ? ParseInt(parts[2], 1) : 1;
@@ -318,7 +318,7 @@ namespace JsonPath
 
             object Index(object obj, string member)
             {
-                return system.GetMemberValue(obj, member);
+                return _system.GetMemberValue(obj, member);
             }
 
             static object NullEval(string expr, object value, string context)
