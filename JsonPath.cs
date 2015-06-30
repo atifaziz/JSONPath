@@ -205,7 +205,16 @@ namespace JsonPath
                 Debug.Assert(output != null);
 
                 _output = output;
-                _eval = eval ?? NullEval;
+                _eval = eval ?? delegate
+                {
+                    // @ symbol in expr must be interpreted specially to resolve
+                    // to value. In JavaScript, the implementation would look
+                    // like:
+                    //
+                    // return obj && value && eval(expr.replace(/@/g, "value"));
+
+                    return null;
+                };
                 _system = valueSystem ?? DefaultValueSystem;
             }
 
@@ -319,19 +328,6 @@ namespace JsonPath
             object Index(object obj, string member)
             {
                 return _system.GetMemberValue(obj, member);
-            }
-
-            static object NullEval(string expr, object value, string context)
-            {
-                //
-                // @ symbol in expr must be interpreted specially to resolve
-                // to value. In JavaScript, the implementation would look
-                // like:
-                //
-                // return obj && value && eval(expr.replace(/@/g, "value"));
-                //
-
-                return null;
             }
         }
 
