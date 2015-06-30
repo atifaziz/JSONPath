@@ -56,9 +56,6 @@ namespace JsonPath
 
     #endregion
 
-    public delegate object JsonPathScriptEvaluator(string script, object value, string context);
-    public delegate void JsonPathResultAccumulator(object value, string[] indicies);
-
     public interface IJsonPathValueSystem
     {
         bool HasMember(object value, string member);
@@ -91,10 +88,15 @@ namespace JsonPath
     {
         public static readonly JsonPathContext Default = new JsonPathContext();
 
-        public JsonPathScriptEvaluator ScriptEvaluator { get; set; }
+        public Func<string /* script  */,
+                    object /* value   */,
+                    string /* context */,
+                    object /* result  */>
+            ScriptEvaluator { get; set; }
+
         public IJsonPathValueSystem ValueSystem { get; set; }
 
-        public void SelectTo(object obj, string expr, JsonPathResultAccumulator output)
+        public void SelectTo(object obj, string expr, Action<object, string[]> output)
         {
             if (obj == null) throw new ArgumentNullException("obj");
             if (output == null) throw new ArgumentNullException("output");
@@ -189,8 +191,8 @@ namespace JsonPath
 
         sealed class Interpreter
         {
-            readonly JsonPathResultAccumulator _output;
-            readonly JsonPathScriptEvaluator _eval;
+            readonly Action<object, string[]> _output;
+            readonly Func<string, object, string, object> _eval;
             readonly IJsonPathValueSystem _system;
 
             static readonly IJsonPathValueSystem DefaultValueSystem = new BasicValueSystem();
@@ -200,7 +202,7 @@ namespace JsonPath
 
             delegate void WalkCallback(object member, string loc, string expr, object value, string path);
 
-            public Interpreter(JsonPathResultAccumulator output, IJsonPathValueSystem valueSystem, JsonPathScriptEvaluator eval)
+            public Interpreter(Action<object, string[]> output, IJsonPathValueSystem valueSystem, Func<string, object, string, object> eval)
             {
                 Debug.Assert(output != null);
 
