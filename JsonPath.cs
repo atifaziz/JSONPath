@@ -91,23 +91,18 @@ namespace JsonPath
             return i.Trace(expr, obj, "$", (value, path) => resultor(value, AsBracketNotation(path)));
         }
 
-        static Regex RegExp(string pattern)
-        {
-            return new Regex(pattern, RegexOptions.ECMAScript);
-        }
-
         static string Normalize(string expr)
         {
             var subx = new List<string>();
-            expr = RegExp(@"[\['](\??\(.*?\))[\]']").Replace(expr, m =>
+            expr = RegExp.Replace(expr, @"[\['](\??\(.*?\))[\]']", m =>
             {
                 subx.Add(m.Groups[1].Value);
                 return "[#" + subx.Count.ToString(CultureInfo.InvariantCulture) + "]";
             });
-            expr = RegExp(@"'?\.'?|\['?").Replace(expr, ";");
-            expr = RegExp(@";;;|;;").Replace(expr, ";..;");
-            expr = RegExp(@";$|'?\]|'$").Replace(expr, string.Empty);
-            expr = RegExp(@"#([0-9]+)").Replace(expr, m =>
+            expr = RegExp.Replace(expr, @"'?\.'?|\['?", ";");
+            expr = RegExp.Replace(expr, @";;;|;;", ";..;");
+            expr = RegExp.Replace(expr, @";$|'?\]|'$", string.Empty);
+            expr = RegExp.Replace(expr, @"#([0-9]+)", m =>
             {
                 var index = int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
                 return subx[index];
@@ -131,7 +126,7 @@ namespace JsonPath
                 else
                 {
                     sb.Append('[');
-                    if (RegExp(@"^[0-9*]+$").IsMatch(index))
+                    if (RegExp.IsMatch(index, @"^[0-9*]+$"))
                         sb.Append(index);
                     else
                         sb.Append('\'').Append(index).Append('\'');
@@ -257,21 +252,21 @@ namespace JsonPath
                     {
                         Walk(atom, tail, value, path, (m, l, x, v, p) =>
                         {
-                            var result = _eval(RegExp(@"^\?\((.*?)\)$").Replace(l, "$1"),
+                            var result = _eval(RegExp.Replace(l, @"^\?\((.*?)\)$", "$1"),
                                 Index(v, m.ToString()), m.ToString());
 
                             if (Convert.ToBoolean(result, CultureInfo.InvariantCulture))
                                 stack.Push(Args(m + ";" + x, v, p));
                         });
                     }
-                    else if (RegExp(@"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$").IsMatch(atom)) // [start:end:step] Phyton slice syntax
+                    else if (RegExp.IsMatch(atom, @"^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$")) // [start:end:step] Phyton slice syntax
                     {
                         foreach (var a in Slice(atom, tail, value, path).Reverse())
                             stack.Push(a);
                     }
                     else if (atom.IndexOf(',') >= 0) // [name1,name2,...]
                     {
-                        foreach (var part in RegExp(@"'?,'?").Split(atom).Reverse())
+                        foreach (var part in RegExp.Split(atom, @"'?,'?").Reverse())
                             stack.Push(Args(part + ";" + tail, value, path));
                     }
                 }
@@ -316,6 +311,31 @@ namespace JsonPath
             object Index(object obj, string member)
             {
                 return _system.GetMemberValue(obj, member);
+            }
+        }
+
+        static class RegExp
+        {
+            const RegexOptions Options = RegexOptions.ECMAScript;
+
+            public static bool IsMatch(string input, string pattern)
+            {
+                return Regex.IsMatch(input, pattern, Options);
+            }
+
+            public static string Replace(string input, string pattern, string replacement)
+            {
+                return Regex.Replace(input, pattern, replacement, Options);
+            }
+
+            public static string Replace(string input, string pattern, MatchEvaluator evaluator)
+            {
+                return Regex.Replace(input, pattern, evaluator, Options);
+            }
+
+            public static IEnumerable<string> Split(string input, string pattern)
+            {
+                return Regex.Split(input, pattern, Options);
             }
         }
 
