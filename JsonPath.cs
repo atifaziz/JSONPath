@@ -1,20 +1,12 @@
+#region Copyright (c) 2007 Atif Aziz. All rights reserved.
 //
 // C# implementation of JSONPath[1]
-//
-// Copyright (c) 2007 Atif Aziz (http://www.raboof.com/)
-// Licensed under The MIT License
-//
-// [1]  JSONPath - XPath for JSON
-//      http://code.google.com/p/jsonpath/
-//      Copyright (c) 2007 Stefan Goessner (goessner.net)
-//      Licensed under The MIT License
-//
-
-#region The MIT License
+// [1] http://goessner.net/articles/JsonPath/
 //
 // The MIT License
 //
-// Copyright (c) 2007 Atif Aziz (http://www.raboof.com/)
+// Copyright (c) 2007 Atif Aziz . All rights reserved.
+// Portions Copyright (c) 2007 Stefan Goessner (goessner.net)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
