@@ -85,6 +85,7 @@ namespace JsonPath
         public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultor)
         {
             if (obj == null) throw new ArgumentNullException("obj");
+            if (resultor == null) throw new ArgumentNullException("resultor");
 
             var i = new Interpreter(ValueSystem, ScriptEvaluator);
 
