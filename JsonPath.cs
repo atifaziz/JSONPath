@@ -4,11 +4,6 @@
 // Copyright (c) 2007 Atif Aziz (http://www.raboof.com/)
 // Licensed under The MIT License
 //
-// Supported targets:
-//
-//  - Mono 1.1 or later
-//  - Microsoft .NET Framework 1.0 or later
-//
 // [1]  JSONPath - XPath for JSON
 //      http://code.google.com/p/jsonpath/
 //      Copyright (c) 2007 Stefan Goessner (goessner.net)
