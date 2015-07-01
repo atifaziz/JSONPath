@@ -77,6 +77,11 @@ namespace JsonPath
 
         public IJsonPathValueSystem ValueSystem { get; set; }
 
+        public IEnumerable<object> Select(object obj, string expr)
+        {
+            return SelectNodes(obj, expr, (v, _) => v);
+        }
+
         public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultor)
         {
             if (obj == null) throw new ArgumentNullException("obj");
