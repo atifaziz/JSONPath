@@ -1,5 +1,10 @@
 # JSONPath
 
+[![Build Status][win-build-badge]][win-builds]
+[![Build Status][nix-build-badge]][nix-builds]
+[![NuGet][nuget-badge]][nuget-pkg]
+[![MyGet][myget-badge]][edge-pkgs]
+
 This project is a C# implementation of JSONPath.
 
 ## JSONPath Expressions
@@ -113,3 +118,13 @@ XPath                 | JSONPath                 | Result                       
 `//*[price>19]/..`    | `$..[?(@.price>19)]`     | Categories with things more expensive than 19 | Parent (caret) not present in original spec
 `//*`                 | `$..*`                   | All elements in XML document; all members of JSON structure |
 `/store/book/[position()!=1]` | `$.store.book[?(@path !== "$[\'store\'][\'book\'][0]")]` | All books besides that at the path pointing to the first | `@path` not present in original spec
+
+
+[win-build-badge]: https://img.shields.io/appveyor/ci/raboof/JSONPath/master.svg?label=windows
+[win-builds]: https://ci.appveyor.com/project/raboof/JSONPath
+[nix-build-badge]: https://img.shields.io/travis/atifaziz/JSONPath/master.svg?label=linux
+[nix-builds]: https://travis-ci.org/atifaziz/JSONPath
+[myget-badge]: https://img.shields.io/myget/raboof/vpre/JsonPathLib.svg?label=myget
+[edge-pkgs]: https://www.myget.org/feed/raboof/package/nuget/JsonPathLib
+[nuget-badge]: https://img.shields.io/nuget/v/JsonPathLib.svg
+[nuget-pkg]: https://www.nuget.org/packages/JsonPathLib
