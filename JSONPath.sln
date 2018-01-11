@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E9ECC4D7-284D-483E-B9B8-E888477F57CB}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		appveyor.yml = appveyor.yml
+		build.cmd = build.cmd
+		build.sh = build.sh
+		COPYING.txt = COPYING.txt
+		pack.cmd = pack.cmd
+		pack.sh = pack.sh
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JsonPath", "src\JsonPath.csproj", "{B2C8E35A-25C7-4A6D-952E-AAC790E678C9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B2C8E35A-25C7-4A6D-952E-AAC790E678C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C8E35A-25C7-4A6D-952E-AAC790E678C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C8E35A-25C7-4A6D-952E-AAC790E678C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C8E35A-25C7-4A6D-952E-AAC790E678C9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15AC2BF0-C147-40E4-9A93-320844A516E5}
+	EndGlobalSection
+EndGlobal
