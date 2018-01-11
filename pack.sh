@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[[ -e test.sh ]] || { echo >&2 "Please cd into the script location before running it."; exit 1; }
+[[ -e pack.sh ]] || { echo >&2 "Please cd into the script location before running it."; exit 1; }
 set -e
 if [ -n "$1" ]; then
     VERSION_SUFFIX="--version-suffix $1"
