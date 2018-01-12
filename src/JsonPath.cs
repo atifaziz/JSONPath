@@ -268,9 +268,7 @@ namespace JsonPath
 
             static IEnumerable<TraceArgs> Slice(string loc, string expr, object value, string path)
             {
-                var list = value as IList;
-
-                if (list == null)
+                if (!(value is IList list))
                     yield break;
 
                 var length = list.Count;
@@ -307,38 +305,19 @@ namespace JsonPath
 
         sealed class BasicValueSystem : IJsonPathValueSystem
         {
-            public bool HasMember(object value, string member)
-            {
-                if (IsPrimitive(value))
-                    return false;
-
-                var dict = value as IDictionary;
-                if (dict != null)
-                    return dict.Contains(member);
-
-                var list = value as IList;
-                if (list != null)
-                    return TryParseInt(member) is int index
-                        && index >= 0 && index < list.Count;
-
-                return false;
-            }
+            public bool HasMember(object value, string member) =>
+                !IsPrimitive(value)
+                && (value is IDictionary dict
+                    ? dict.Contains(member)
+                    : value is IList list
+                      && TryParseInt(member) is int i && i >= 0 && i < list.Count);
 
             public object GetMemberValue(object value, string member)
-            {
-                if (IsPrimitive(value))
-                    throw new ArgumentException(null, nameof(value));
-
-                var dict = value as IDictionary;
-                if (dict != null)
-                    return dict[member];
-
-                var list = (IList) value;
-                if (TryParseInt(member) is int index && index >= 0 && index < list.Count)
-                    return list[index];
-
-                return null;
-            }
+                => IsPrimitive(value) ? throw new ArgumentException(null, nameof(value))
+                 : value is IDictionary dict ? dict[member]
+                 : !(value is IList list) ? throw new ArgumentException(nameof(value))
+                 : TryParseInt(member) is int i && i >= 0 && i < list.Count ? list[i]
+                 : null;
 
             public IEnumerable<string> GetMembers(object value) =>
                 ((IDictionary) value).Keys.Cast<string>();
