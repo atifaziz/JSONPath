@@ -128,20 +128,9 @@ namespace JsonPath
             return sb.ToString();
         }
 
-        static int ParseInt(string str, int defaultValue = 0)
-        {
-            if (string.IsNullOrEmpty(str))
-                return defaultValue;
-
-            try
-            {
-                return int.Parse(str, NumberStyles.None, CultureInfo.InvariantCulture);
-            }
-            catch (FormatException)
-            {
-                return defaultValue;
-            }
-        }
+        static int? TryParseInt(string str) =>
+            int.TryParse(str, NumberStyles.None, CultureInfo.InvariantCulture, out var n)
+            ? n : (int?) null;
 
         sealed class Interpreter
         {
@@ -286,9 +275,9 @@ namespace JsonPath
 
                 var length = list.Count;
                 var parts = loc.Split(Colon);
-                var start = ParseInt(parts[0]);
-                var end = ParseInt(parts[1], list.Count);
-                var step = parts.Length > 2 ? ParseInt(parts[2], 1) : 1;
+                var start = TryParseInt(parts[0]) ?? 0;
+                var end = TryParseInt(parts[1]) ?? list.Count;
+                var step = parts.Length > 2 ? TryParseInt(parts[2]) ?? 1 : 1;
                 start = (start < 0) ? Math.Max(0, start + length) : Math.Min(length, start);
                 end = (end < 0) ? Math.Max(0, end + length) : Math.Min(length, end);
                 for (var i = start; i < end; i += step)
@@ -329,10 +318,8 @@ namespace JsonPath
 
                 var list = value as IList;
                 if (list != null)
-                {
-                    var index = ParseInt(member, -1);
-                    return index >= 0 && index < list.Count;
-                }
+                    return TryParseInt(member) is int index
+                        && index >= 0 && index < list.Count;
 
                 return false;
             }
@@ -347,8 +334,7 @@ namespace JsonPath
                     return dict[member];
 
                 var list = (IList) value;
-                var index = ParseInt(member, -1);
-                if (index >= 0 && index < list.Count)
+                if (TryParseInt(member) is int index && index >= 0 && index < list.Count)
                     return list[index];
 
                 return null;
