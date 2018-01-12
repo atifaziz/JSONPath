@@ -88,7 +88,7 @@ namespace JsonPath
             expr = RegExp.Replace(expr, @"[\['](\??\(.*?\))[\]']", m =>
             {
                 subx.Add(m.Groups[1].Value);
-                return "[#" + subx.Count.ToString(CultureInfo.InvariantCulture) + "]";
+                return "[#" + (subx.Count - 1).ToString(CultureInfo.InvariantCulture) + "]";
             });
             expr = RegExp.Replace(expr, @"'?\.'?|\['?", ";");
             expr = RegExp.Replace(expr, @";;;|;;", ";..;");
