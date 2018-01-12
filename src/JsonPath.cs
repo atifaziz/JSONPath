@@ -356,7 +356,7 @@ namespace JsonPath
             public object GetMemberValue(object value, string member)
             {
                 if (IsPrimitive(value))
-                    throw new ArgumentException("value");
+                    throw new ArgumentException(null, "value");
 
                 var dict = value as IDictionary;
                 if (dict != null)
