@@ -64,10 +64,8 @@ namespace JsonPath
 
         public IJsonPathValueSystem ValueSystem { get; set; }
 
-        public IEnumerable<object> Select(object obj, string expr)
-        {
-            return SelectNodes(obj, expr, (v, _) => v);
-        }
+        public IEnumerable<object> Select(object obj, string expr) =>
+            SelectNodes(obj, expr, (v, _) => v);
 
         public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultor)
         {
@@ -186,15 +184,11 @@ namespace JsonPath
                 }
             }
 
-            public IEnumerable<T> Trace<T>(string expr, object value, string path, Func<object, string[], T> resultor)
-            {
-                return Trace(Args(expr, value, path), resultor);
-            }
+            public IEnumerable<T> Trace<T>(string expr, object value, string path, Func<object, string[], T> resultor) =>
+                Trace(Args(expr, value, path), resultor);
 
-            static TraceArgs Args(string expr, object value, string path)
-            {
-                return new TraceArgs(expr, value, path);
-            }
+            static TraceArgs Args(string expr, object value, string path) =>
+                new TraceArgs(expr, value, path);
 
             IEnumerable<T> Trace<T>(TraceArgs args, Func<object, string[], T> resultor)
             {
@@ -301,35 +295,25 @@ namespace JsonPath
                     yield return Args(i + ";" + expr, value, path);
             }
 
-            object Index(object obj, string member)
-            {
-                return _system.GetMemberValue(obj, member);
-            }
+            object Index(object obj, string member) =>
+                _system.GetMemberValue(obj, member);
         }
 
         static class RegExp
         {
             const RegexOptions Options = RegexOptions.ECMAScript;
 
-            public static bool IsMatch(string input, string pattern)
-            {
-                return Regex.IsMatch(input, pattern, Options);
-            }
+            public static bool IsMatch(string input, string pattern) =>
+                Regex.IsMatch(input, pattern, Options);
 
-            public static string Replace(string input, string pattern, string replacement)
-            {
-                return Regex.Replace(input, pattern, replacement, Options);
-            }
+            public static string Replace(string input, string pattern, string replacement) =>
+                Regex.Replace(input, pattern, replacement, Options);
 
-            public static string Replace(string input, string pattern, MatchEvaluator evaluator)
-            {
-                return Regex.Replace(input, pattern, evaluator, Options);
-            }
+            public static string Replace(string input, string pattern, MatchEvaluator evaluator) =>
+                Regex.Replace(input, pattern, evaluator, Options);
 
-            public static IEnumerable<string> Split(string input, string pattern)
-            {
-                return Regex.Split(input, pattern, Options);
-            }
+            public static IEnumerable<string> Split(string input, string pattern) =>
+                Regex.Split(input, pattern, Options);
         }
 
         sealed class BasicValueSystem : IJsonPathValueSystem
@@ -370,28 +354,16 @@ namespace JsonPath
                 return null;
             }
 
-            public IEnumerable<string> GetMembers(object value)
-            {
-                return ((IDictionary) value).Keys.Cast<string>();
-            }
+            public IEnumerable<string> GetMembers(object value) =>
+                ((IDictionary) value).Keys.Cast<string>();
 
-            public bool IsObject(object value)
-            {
-                return value is IDictionary;
-            }
+            public bool IsObject(object value) => value is IDictionary;
+            public bool IsArray(object value) => value is IList;
 
-            public bool IsArray(object value)
-            {
-                return value is IList;
-            }
-
-            public bool IsPrimitive(object value)
-            {
-                if (value == null)
-                    throw new ArgumentNullException(nameof(value));
-
-                return Type.GetTypeCode(value.GetType()) != TypeCode.Object;
-            }
+            public bool IsPrimitive(object value) =>
+                value == null
+                ? throw new ArgumentNullException(nameof(value))
+                : Type.GetTypeCode(value.GetType()) != TypeCode.Object;
         }
     }
 }
