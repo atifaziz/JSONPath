@@ -129,7 +129,7 @@ namespace JsonPath
         }
 
         static int? TryParseInt(string str) =>
-            int.TryParse(str, NumberStyles.None, CultureInfo.InvariantCulture, out var n)
+            int.TryParse(str, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n)
             ? n : (int?) null;
 
         sealed class Interpreter
