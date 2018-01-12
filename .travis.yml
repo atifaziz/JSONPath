@@ -19,3 +19,4 @@ install:
 
 script:
   - dotnet build --no-restore -c $CONFIGURATION
+  - dotnet test --no-restore --no-build -c $CONFIGURATION tests
