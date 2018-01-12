@@ -71,8 +71,8 @@ namespace JsonPath
 
         public IEnumerable<T> SelectNodes<T>(object obj, string expr, Func<object, string, T> resultor)
         {
-            if (obj == null) throw new ArgumentNullException("obj");
-            if (resultor == null) throw new ArgumentNullException("resultor");
+            if (obj == null) throw new ArgumentNullException(nameof(obj));
+            if (resultor == null) throw new ArgumentNullException(nameof(resultor));
 
             var i = new Interpreter(ValueSystem, ScriptEvaluator);
 
@@ -106,7 +106,7 @@ namespace JsonPath
         public static string AsBracketNotation(string[] indicies)
         {
             if (indicies == null)
-                throw new ArgumentNullException("indicies");
+                throw new ArgumentNullException(nameof(indicies));
 
             var sb = new StringBuilder();
 
@@ -356,7 +356,7 @@ namespace JsonPath
             public object GetMemberValue(object value, string member)
             {
                 if (IsPrimitive(value))
-                    throw new ArgumentException(null, "value");
+                    throw new ArgumentException(null, nameof(value));
 
                 var dict = value as IDictionary;
                 if (dict != null)
@@ -388,7 +388,7 @@ namespace JsonPath
             public bool IsPrimitive(object value)
             {
                 if (value == null)
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
 
                 return Type.GetTypeCode(value.GetType()) != TypeCode.Object;
             }
