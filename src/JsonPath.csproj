@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.5</TargetFramework>
     <PackageId>JsonPathLib</PackageId>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>0.6.0</VersionPrefix>
     <Copyright>Copyright 2007 Atif Aziz. Portions Copyright 2007 Stefan Goessner</Copyright>
     <Description>Stand-alone JSONPath (XPath-like syntax for JSON) Library</Description>
     <Authors>Atif Aziz</Authors>
