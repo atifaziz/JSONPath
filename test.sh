@@ -3,6 +3,6 @@
 set -e
 ./build.sh
 for c in Debug Release; do
-    dotnet test --no-build tests /p:Configuration=$c
+    dotnet test --no-build tests -c $c
 done
 
