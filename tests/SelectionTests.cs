@@ -33,6 +33,7 @@ namespace JsonPath.Tests
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Jint;
     using Xunit;
     using Object = System.Collections.Generic.Dictionary<string, object>;
 
@@ -89,12 +90,12 @@ namespace JsonPath.Tests
             ["store"] = Store
         };
 
-        static IEnumerable<(T Item, string Path)> SelectNodes<T>(string expr, Func<object, object> eval = null) =>
+        static IEnumerable<(T Item, string Path)> SelectNodes<T>(string expr, Func<string, object, object> eval = null) =>
             new JsonPathContext
             {
                 ScriptEvaluator =
                     eval != null
-                    ? new Func<string, object, string, object>((script, value, context) => eval(value))
+                    ? new Func<string, object, string, object>((script, value, context) => eval(script, value))
                     : null
             }.SelectNodes(Data, expr, (m, p) => ((T) m, p));
 
@@ -210,9 +211,9 @@ namespace JsonPath.Tests
         {
             var matches =
                 SelectNodes<Object>(expr,
-                                    o => o is Object book
-                                      && book.TryGetValue("isbn", out var isbn)
-                                      && !string.IsNullOrEmpty(isbn as string));
+                                    (_, o) => o is Object book
+                                           && book.TryGetValue("isbn", out var isbn)
+                                           && !string.IsNullOrEmpty(isbn as string));
             var expected = new[]
             {
                 new { Item = Books[2], Path = "$['store']['book'][2]" },
@@ -226,10 +227,10 @@ namespace JsonPath.Tests
         {
             var matches =
                 SelectNodes<Object>(expr,
-                                    o => o is Object obj
-                                      && obj.TryGetValue("price", out var price)
-                                      && price is decimal n
-                                      && n < 10);
+                                    (_, o) => o is Object obj
+                                           && obj.TryGetValue("price", out var price)
+                                           && price is decimal n
+                                           && n < 10);
             var expected = new[]
             {
                 new { Item = Books[0], Path = "$['store']['book'][0]" },
@@ -279,7 +280,7 @@ namespace JsonPath.Tests
         public void AllBooksBesidesThatAtThePathPointingToTheFirst(string expr)
         {
             var matches =
-                from e in SelectNodes<Object>(expr, _ => true)
+                from e in SelectNodes<Object>(expr, delegate { return true; })
                 where e.Path != "$['store']['book'][0]"
                 select new { e.Item, e.Path };
 
@@ -291,6 +292,23 @@ namespace JsonPath.Tests
             };
 
             Assert.Equal(expected, matches);
+        }
+
+        [Theory, InlineData("$..book[?(@.price == 8.99 && @.category == 'fiction')]")]
+        public void FilterAllBooksUsingLogicalAndInScript(string expr)
+        {
+            var engine = new Engine();
+
+            object Eval(string script, object value) =>
+                engine.SetValue("$$", value)
+                      .Execute(script.Replace("@", "$$"))
+                      .GetCompletionValue()
+                      .ToObject();
+
+            var matches = SelectNodes<Object>(expr, Eval);
+
+            Assert.Equal(new { Item = Books[2], Path = "$['store']['book'][2]" },
+                         matches.Select(e => new { e.Item, e.Path }).Single());
         }
     }
 }
