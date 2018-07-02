@@ -42,7 +42,7 @@ namespace JsonPath
 
     #endregion
 
-    public interface IJsonPathValueSystem
+    partial interface IJsonPathValueSystem
     {
         bool HasMember(object value, string member);
         object GetMemberValue(object value, string member);
@@ -52,7 +52,7 @@ namespace JsonPath
         bool IsPrimitive(object value);
     }
 
-    public sealed class JsonPathContext
+    sealed partial class JsonPathContext
     {
         public static readonly JsonPathContext Default = new JsonPathContext();
 
