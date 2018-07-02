@@ -1,7 +1,7 @@
 language: csharp
 os:
   - linux
-solution: High5.sln
+solution: JSONPath.sln
 dist: trusty
 sudo: required
 dotnet: 2.0.0
