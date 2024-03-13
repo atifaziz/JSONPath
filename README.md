@@ -119,6 +119,9 @@ XPath                 | JSONPath                 | Result                       
 `//*`                 | `$..*`                   | All elements in XML document; all members of JSON structure |
 `/store/book/[position()!=1]` | `$.store.book[?(@path !== "$[\'store\'][\'book\'][0]")]` | All books besides that at the path pointing to the first | `@path` not present in original spec
 
+See also:
+
+- [RFC 9535: JSONPath: Query Expressions for JSON][rfc]
 
 [win-build-badge]: https://img.shields.io/appveyor/ci/raboof/JSONPath/master.svg?label=windows
 [win-builds]: https://ci.appveyor.com/project/raboof/JSONPath
@@ -128,3 +131,4 @@ XPath                 | JSONPath                 | Result                       
 [edge-pkgs]: https://www.myget.org/feed/raboof/package/nuget/JsonPathLib
 [nuget-badge]: https://img.shields.io/nuget/v/JsonPathLib.svg
 [nuget-pkg]: https://www.nuget.org/packages/JsonPathLib
+[rfc]: https://www.rfc-editor.org/rfc/rfc9535.html
